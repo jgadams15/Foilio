@@ -1,0 +1,68 @@
+# --- Node / TypeScript ---
+node_modules/
+dist/
+build/
+*.tsbuildinfo
+.npm/
+.eslintcache
+coverage/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# --- Expo / React Native ---
+.expo/
+.expo-shared/
+web-build/
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.orig.*
+ios/
+android/
+.metro-health-check*
+
+# --- Supabase ---
+supabase/.branches
+supabase/.temp
+supabase/.env
+
+# --- Python / ML ---
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+venv/
+.venv/
+env/
+ml/data/raw/*
+!ml/data/raw/.gitkeep
+ml/data/processed/*
+!ml/data/processed/.gitkeep
+ml/models/*
+!ml/models/.gitkeep
+!ml/models/README.md
+*.tflite
+*.mlmodel
+*.mlpackage
+*.onnx
+*.h5
+*.pt
+*.pth
+*.ckpt
+.ipynb_checkpoints/
+
+# --- Env / secrets ---
+.env
+.env.local
+.env.*.local
+
+# --- Editor / OS ---
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.log
