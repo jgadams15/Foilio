@@ -12,6 +12,8 @@ export interface Card {
   imageUrl?: string;
   /** Set name, e.g. "Darkness Ablaze". Undefined until details have loaded. */
   setName?: string;
+  /** The set's release date as an ISO string ("2020-08-14"), for "newest set" sorting. */
+  setReleaseDate?: string;
   price?: Price;
   /** True once the per-card detail request has finished (set name + price are final). */
   detailsLoaded: boolean;

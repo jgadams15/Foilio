@@ -27,12 +27,35 @@ const PAGE_SIZE = 20;
 const DEBOUNCE_MS = 400;
 
 type Status = "idle" | "loading" | "results" | "empty" | "error";
+type SortMode = "newest" | "price";
+
+// Cards missing the field being sorted on (no price loaded yet, or no
+// release date loaded yet) always sink to the bottom instead of clumping at
+// the top the way "undefined" would sort by default.
+function compareByPrice(a: Card, b: Card): number {
+  const aAmount = a.price?.amount;
+  const bAmount = b.price?.amount;
+  if (aAmount == null && bAmount == null) return 0;
+  if (aAmount == null) return 1;
+  if (bAmount == null) return -1;
+  return bAmount - aAmount;
+}
+
+function compareByNewestSet(a: Card, b: Card): number {
+  const aDate = a.setReleaseDate;
+  const bDate = b.setReleaseDate;
+  if (!aDate && !bDate) return 0;
+  if (!aDate) return 1;
+  if (!bDate) return -1;
+  return bDate.localeCompare(aDate);
+}
 
 export default function SearchScreen() {
   const [query, setQuery] = useState("");
   const [cards, setCards] = useState<Card[]>([]);
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const [status, setStatus] = useState<Status>("idle");
+  const [sortMode, setSortMode] = useState<SortMode>("newest");
 
   // Typing quickly can start several searches before the first one replies.
   // "generation" is a counter: each new search gets the next number, and we
@@ -108,7 +131,9 @@ export default function SearchScreen() {
     }
   }, [cards, visibleCount]);
 
-  const visibleCards = cards.slice(0, visibleCount);
+  const visibleCards = cards
+    .slice(0, visibleCount)
+    .sort(sortMode === "price" ? compareByPrice : compareByNewestSet);
   const hasMore = visibleCount < cards.length;
 
   return (
@@ -138,6 +163,21 @@ export default function SearchScreen() {
       )}
 
       {status === "results" && (
+        <View style={styles.sortRow}>
+          <SortOption
+            label="Newest set"
+            active={sortMode === "newest"}
+            onPress={() => setSortMode("newest")}
+          />
+          <SortOption
+            label="Highest price"
+            active={sortMode === "price"}
+            onPress={() => setSortMode("price")}
+          />
+        </View>
+      )}
+
+      {status === "results" && (
         <FlatList
           data={visibleCards}
           keyExtractor={(card) => card.id}
@@ -152,6 +192,14 @@ export default function SearchScreen() {
         />
       )}
     </View>
+  );
+}
+
+function SortOption({ label, active, onPress }: { label: string; active: boolean; onPress: () => void }) {
+  return (
+    <Pressable style={[styles.sortOption, active && styles.sortOptionActive]} onPress={onPress}>
+      <Text style={[styles.sortOptionText, active && styles.sortOptionTextActive]}>{label}</Text>
+    </Pressable>
   );
 }
 
@@ -201,6 +249,28 @@ const styles = StyleSheet.create({
   },
   spinner: {
     marginTop: 24,
+  },
+  sortRow: {
+    flexDirection: "row",
+    marginBottom: 16,
+    gap: 8,
+  },
+  sortOption: {
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 16,
+    backgroundColor: "#eee",
+  },
+  sortOptionActive: {
+    backgroundColor: "#333",
+  },
+  sortOptionText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#333",
+  },
+  sortOptionTextActive: {
+    color: "#fff",
   },
   message: {
     marginTop: 24,

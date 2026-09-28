@@ -37,8 +37,13 @@ interface CardDetailsResponse {
   localId: string;
   name: string;
   image?: string;
-  set?: { name: string };
+  set?: { id: string; name: string };
   pricing?: CardPricingResponse;
+}
+
+/** Raw shape of a full /sets/{id} response, trimmed to the field we use. */
+interface SetDetailsResponse {
+  releaseDate?: string;
 }
 
 /**
@@ -70,15 +75,36 @@ export async function getCardDetails(id: string, signal?: AbortSignal): Promise<
     throw new Error(`TCGdex card lookup failed with status ${response.status}`);
   }
   const data: CardDetailsResponse = await response.json();
+  const setReleaseDate = data.set ? await getSetReleaseDate(data.set.id) : undefined;
   return {
     id: data.id,
     name: data.name,
     localId: data.localId,
     imageUrl: data.image,
     setName: data.set?.name,
+    setReleaseDate,
     price: pickPrice(data.pricing),
     detailsLoaded: true,
   };
+}
+
+// Many cards share the same set, and a set's release date never changes, so
+// we fetch each set only once (per app session) and reuse the result. This
+// is deliberately not tied to any particular search's AbortController: even
+// if the search that first requested it gets cancelled, the release date is
+// still valid and worth keeping for the next card (or search) that needs it.
+const setReleaseDateCache = new Map<string, Promise<string | undefined>>();
+
+function getSetReleaseDate(setId: string): Promise<string | undefined> {
+  let cached = setReleaseDateCache.get(setId);
+  if (!cached) {
+    cached = fetch(`${BASE_URL}/sets/${setId}`)
+      .then((response) => (response.ok ? (response.json() as Promise<SetDetailsResponse>) : undefined))
+      .then((data) => data?.releaseDate)
+      .catch(() => undefined);
+    setReleaseDateCache.set(setId, cached);
+  }
+  return cached;
 }
 
 /** Picks one representative market price out of TCGdex's several price sources. */
