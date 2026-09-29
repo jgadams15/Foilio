@@ -1,6 +1,7 @@
 // The Search screen: type a Pokémon card name, optionally narrow to one
 // set, and see matching cards with their image, set, number, and price.
 import { Image } from "expo-image";
+import { useRouter } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
@@ -19,7 +20,7 @@ import {
 // CardDataProvider interface — never to TCGdex specifics directly — so a
 // future paid data source can be swapped in by changing that one export,
 // with no changes here.
-import { buildCardImageUrl, Card, CardSet, cardDataProvider, Price, toUsdAmount } from "@foilio/shared";
+import { buildCardImageUrl, Card, CardSet, cardDataProvider, formatPriceDisplay, Price, toUsdAmount } from "@foilio/shared";
 
 // The provider's search only returns "brief" info (name, image, card
 // number) — no set name or price. We fetch those separately, per card,
@@ -82,6 +83,7 @@ function detectSetInQuery(trimmedQuery: string, sets: CardSet[]): { set: CardSet
 }
 
 export default function SearchScreen() {
+  const router = useRouter();
   const [query, setQuery] = useState("");
   const [cards, setCards] = useState<Card[]>([]);
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
@@ -282,7 +284,9 @@ export default function SearchScreen() {
         <FlatList
           data={visibleCards}
           keyExtractor={(card) => card.id}
-          renderItem={({ item }) => <CardRow card={item} />}
+          renderItem={({ item }) => (
+            <CardRow card={item} onPress={() => router.push({ pathname: "/card/[id]", params: { id: item.id } })} />
+          )}
           ListFooterComponent={
             hasMore ? (
               <Pressable style={styles.loadMoreButton} onPress={() => setVisibleCount((count) => count + PAGE_SIZE)}>
@@ -340,12 +344,12 @@ function SortOption({ label, active, onPress }: { label: string; active: boolean
   );
 }
 
-function CardRow({ card }: { card: Card }) {
+function CardRow({ card, onPress }: { card: Card; onPress: () => void }) {
   const imageUri = card.imageUrl ? buildCardImageUrl(card.imageUrl) : undefined;
   const price = primaryPrice(card);
 
   return (
-    <View style={styles.row}>
+    <Pressable style={styles.row} onPress={onPress}>
       {imageUri ? (
         <Image source={{ uri: imageUri }} style={styles.image} contentFit="contain" />
       ) : (
@@ -358,20 +362,11 @@ function CardRow({ card }: { card: Card }) {
         <Text style={styles.cardMeta}>#{card.localId}</Text>
         <Text style={styles.cardMeta}>{card.detailsLoaded ? (card.setName ?? "Unknown set") : "Loading…"}</Text>
         {card.detailsLoaded && (
-          <Text style={styles.cardPrice}>{price ? formatPrice(price) : "No price"}</Text>
+          <Text style={styles.cardPrice}>{price ? formatPriceDisplay(price) : "No price"}</Text>
         )}
       </View>
-    </View>
+    </Pressable>
   );
-}
-
-/** Prices we got directly in USD are shown as-is. A EUR price is always an
- * estimate once converted, so we show both numbers and mark it clearly. */
-function formatPrice(price: Price): string {
-  if (price.currency === "USD") {
-    return `$${price.amount.toFixed(2)}`;
-  }
-  return `≈ $${toUsdAmount(price).toFixed(2)} (from €${price.amount.toFixed(2)})`;
 }
 
 const styles = StyleSheet.create({

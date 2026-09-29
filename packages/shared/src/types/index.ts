@@ -16,6 +16,12 @@ export interface Card {
   setName?: string;
   /** The set's release date as an ISO string ("2020-08-14"), for "newest set" sorting. */
   setReleaseDate?: string;
+  /** Base URL for the set's symbol icon, with no extension. Undefined until details have loaded. */
+  setSymbolUrl?: string;
+  /** e.g. "Rare Holo". Undefined until details have loaded, or if the provider has none. */
+  rarity?: string;
+  /** The card's illustrator. Undefined until details have loaded, or if the provider has none. */
+  artist?: string;
   /** Every known price for this card (different condition/grade). Empty until details have loaded, or if the provider has none. */
   prices: Price[];
   /** True once the per-card detail request has finished (set name + prices are final). */

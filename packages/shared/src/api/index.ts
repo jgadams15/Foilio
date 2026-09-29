@@ -1,5 +1,5 @@
 export type { CardDataProvider } from "./provider";
-export { buildCardImageUrl } from "./tcgdex";
+export { buildCardImageUrl, buildSetSymbolUrl } from "./tcgdex";
 export type { ImageQuality } from "./tcgdex";
 
 import type { CardDataProvider } from "./provider";
