@@ -38,7 +38,9 @@ interface CardDetailsResponse {
   localId: string;
   name: string;
   image?: string;
-  set?: { id: string; name: string };
+  rarity?: string;
+  illustrator?: string;
+  set?: { id: string; name: string; symbol?: string };
   pricing?: CardPricingResponse;
 }
 
@@ -91,6 +93,9 @@ export class TcgdexProvider implements CardDataProvider {
       setId: data.set?.id,
       setName: data.set?.name,
       setReleaseDate,
+      setSymbolUrl: data.set?.symbol,
+      rarity: data.rarity,
+      artist: data.illustrator,
       prices: pickPrices(data.pricing),
       detailsLoaded: true,
     };
@@ -178,4 +183,9 @@ export type ImageQuality = "low" | "high";
 /** Builds a displayable image URL from a card's base image path. */
 export function buildCardImageUrl(imageUrl: string, quality: ImageQuality = "low"): string {
   return `${imageUrl}/${quality}.webp`;
+}
+
+/** Builds a displayable image URL from a set's base symbol path (no quality option, unlike card images). */
+export function buildSetSymbolUrl(symbolUrl: string): string {
+  return `${symbolUrl}.webp`;
 }
