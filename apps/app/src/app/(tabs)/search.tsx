@@ -1,5 +1,6 @@
 // The Search screen: type a Pokémon card name, optionally narrow to one
 // set, and see matching cards with their image, set, number, and price.
+import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
 import { useEffect, useRef, useState } from "react";
@@ -21,6 +22,9 @@ import {
 // future paid data source can be swapped in by changing that one export,
 // with no changes here.
 import { buildCardImageUrl, Card, CardSet, cardDataProvider, formatPriceDisplay, Price, toUsdAmount } from "@foilio/shared";
+
+import { Button, Card as CardSurface, Chip } from "@/components";
+import { colors, fontFamily, fontSize, radii, spacing, tabularNums } from "@/theme";
 
 // The provider's search only returns "brief" info (name, image, card
 // number) — no set name or price. We fetch those separately, per card,
@@ -222,25 +226,29 @@ export default function SearchScreen() {
 
   return (
     <View style={styles.container}>
-      <TextInput
-        style={styles.input}
-        placeholder="Search for a card name…"
-        value={query}
-        onChangeText={setQuery}
-        autoCorrect={false}
-        autoCapitalize="none"
-        clearButtonMode="while-editing"
-      />
+      <View style={styles.searchBox}>
+        <Ionicons name="search" size={18} color={colors.textMuted} />
+        <TextInput
+          style={styles.input}
+          placeholder="Search for a card name…"
+          placeholderTextColor={colors.textMuted}
+          value={query}
+          onChangeText={setQuery}
+          autoCorrect={false}
+          autoCapitalize="none"
+          clearButtonMode="while-editing"
+        />
+      </View>
 
       <View style={styles.setFilterRow}>
-        <Pressable style={styles.setFilterButton} onPress={() => setPickerVisible(true)}>
-          <Text style={styles.setFilterButtonText}>
-            {selectedSet ? `Set: ${selectedSet.name}` : "Filter by set"}
-          </Text>
-        </Pressable>
+        <Chip
+          label={selectedSet ? `Set: ${selectedSet.name}` : "Filter by set"}
+          selected={Boolean(selectedSet)}
+          onPress={() => setPickerVisible(true)}
+        />
         {selectedSet && (
           <Pressable style={styles.clearSetButton} onPress={() => setSelectedSet(null)}>
-            <Text style={styles.clearSetButtonText}>✕</Text>
+            <Ionicons name="close" size={16} color={colors.textMuted} />
           </Pressable>
         )}
       </View>
@@ -249,7 +257,7 @@ export default function SearchScreen() {
         <Text style={styles.detectedSetHint}>Matched set: {detectedSet.name}</Text>
       )}
 
-      {status === "loading" && <ActivityIndicator style={styles.spinner} size="large" />}
+      {status === "loading" && <ActivityIndicator style={styles.spinner} size="large" color={colors.accent} />}
 
       {status === "idle" && (
         <Text style={styles.message}>Search for a card, or filter by set, to see prices and details.</Text>
@@ -267,16 +275,8 @@ export default function SearchScreen() {
 
       {status === "results" && (
         <View style={styles.sortRow}>
-          <SortOption
-            label="Newest set"
-            active={sortMode === "newest"}
-            onPress={() => setSortMode("newest")}
-          />
-          <SortOption
-            label="Highest price"
-            active={sortMode === "price"}
-            onPress={() => setSortMode("price")}
-          />
+          <Chip label="Newest set" selected={sortMode === "newest"} onPress={() => setSortMode("newest")} />
+          <Chip label="Highest price" selected={sortMode === "price"} onPress={() => setSortMode("price")} />
         </View>
       )}
 
@@ -289,9 +289,9 @@ export default function SearchScreen() {
           )}
           ListFooterComponent={
             hasMore ? (
-              <Pressable style={styles.loadMoreButton} onPress={() => setVisibleCount((count) => count + PAGE_SIZE)}>
-                <Text style={styles.loadMoreText}>Load more</Text>
-              </Pressable>
+              <View style={styles.loadMoreWrap}>
+                <Button label="Load more" variant="secondary" onPress={() => setVisibleCount((count) => count + PAGE_SIZE)} />
+              </View>
             ) : null
           }
         />
@@ -305,14 +305,18 @@ export default function SearchScreen() {
               <Text style={styles.pickerClose}>Close</Text>
             </Pressable>
           </View>
-          <TextInput
-            style={styles.input}
-            placeholder="Search sets…"
-            value={pickerFilter}
-            onChangeText={setPickerFilter}
-            autoCorrect={false}
-            autoCapitalize="none"
-          />
+          <View style={styles.searchBox}>
+            <Ionicons name="search" size={18} color={colors.textMuted} />
+            <TextInput
+              style={styles.input}
+              placeholder="Search sets…"
+              placeholderTextColor={colors.textMuted}
+              value={pickerFilter}
+              onChangeText={setPickerFilter}
+              autoCorrect={false}
+              autoCapitalize="none"
+            />
+          </View>
           <FlatList
             data={filteredSets}
             keyExtractor={(set) => set.id}
@@ -336,35 +340,33 @@ export default function SearchScreen() {
   );
 }
 
-function SortOption({ label, active, onPress }: { label: string; active: boolean; onPress: () => void }) {
-  return (
-    <Pressable style={[styles.sortOption, active && styles.sortOptionActive]} onPress={onPress}>
-      <Text style={[styles.sortOptionText, active && styles.sortOptionTextActive]}>{label}</Text>
-    </Pressable>
-  );
-}
-
 function CardRow({ card, onPress }: { card: Card; onPress: () => void }) {
   const imageUri = card.imageUrl ? buildCardImageUrl(card.imageUrl) : undefined;
   const price = primaryPrice(card);
+  const subtitle = card.detailsLoaded ? `${card.setName ?? "Unknown set"} · #${card.localId}` : "Loading…";
 
   return (
-    <Pressable style={styles.row} onPress={onPress}>
-      {imageUri ? (
-        <Image source={{ uri: imageUri }} style={styles.image} contentFit="contain" />
-      ) : (
-        <View style={[styles.image, styles.imagePlaceholder]}>
-          <Text style={styles.imagePlaceholderText}>No image</Text>
+    <Pressable onPress={onPress}>
+      <CardSurface style={styles.row}>
+        {imageUri ? (
+          <Image source={{ uri: imageUri }} style={styles.image} contentFit="contain" />
+        ) : (
+          <View style={[styles.image, styles.imagePlaceholder]}>
+            <Text style={styles.imagePlaceholderText}>No image</Text>
+          </View>
+        )}
+        <View style={styles.rowMiddle}>
+          <Text style={styles.cardName} numberOfLines={1}>
+            {card.name}
+          </Text>
+          <Text style={styles.cardSubtitle} numberOfLines={1}>
+            {subtitle}
+          </Text>
         </View>
-      )}
-      <View style={styles.rowText}>
-        <Text style={styles.cardName}>{card.name}</Text>
-        <Text style={styles.cardMeta}>#{card.localId}</Text>
-        <Text style={styles.cardMeta}>{card.detailsLoaded ? (card.setName ?? "Unknown set") : "Loading…"}</Text>
         {card.detailsLoaded && (
           <Text style={styles.cardPrice}>{price ? formatPriceDisplay(price) : "No price"}</Text>
         )}
-      </View>
+      </CardSurface>
     </Pressable>
   );
 }
@@ -372,158 +374,140 @@ function CardRow({ card, onPress }: { card: Card; onPress: () => void }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingTop: 24,
-    paddingHorizontal: 16,
+    backgroundColor: colors.background,
+    paddingTop: spacing.lg,
+    paddingHorizontal: spacing.lg,
+  },
+  searchBox: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radii.md,
+    paddingHorizontal: spacing.md,
+    marginBottom: spacing.md,
   },
   input: {
-    borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    fontSize: 16,
-    marginBottom: 16,
+    flex: 1,
+    paddingVertical: spacing.md,
+    fontFamily: fontFamily.regular,
+    fontSize: fontSize.md,
+    color: colors.text,
   },
   setFilterRow: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 8,
-    gap: 8,
-  },
-  setFilterButton: {
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 16,
-    backgroundColor: "#eee",
-  },
-  setFilterButtonText: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#333",
+    marginBottom: spacing.sm,
+    gap: spacing.sm,
   },
   clearSetButton: {
-    paddingVertical: 6,
-    paddingHorizontal: 10,
-    borderRadius: 16,
-    backgroundColor: "#eee",
-  },
-  clearSetButtonText: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#333",
+    padding: spacing.xs,
+    borderRadius: radii.pill,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   detectedSetHint: {
-    fontSize: 13,
-    color: "#666",
-    marginBottom: 8,
+    fontFamily: fontFamily.regular,
+    fontSize: fontSize.sm,
+    color: colors.textMuted,
+    marginBottom: spacing.sm,
   },
   spinner: {
-    marginTop: 24,
+    marginTop: spacing.xl,
   },
   sortRow: {
     flexDirection: "row",
-    marginBottom: 16,
-    gap: 8,
-  },
-  sortOption: {
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 16,
-    backgroundColor: "#eee",
-  },
-  sortOptionActive: {
-    backgroundColor: "#333",
-  },
-  sortOptionText: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#333",
-  },
-  sortOptionTextActive: {
-    color: "#fff",
+    marginBottom: spacing.md,
+    gap: spacing.sm,
   },
   message: {
-    marginTop: 24,
-    fontSize: 16,
-    color: "#666",
+    marginTop: spacing.xl,
+    fontFamily: fontFamily.regular,
+    fontSize: fontSize.md,
+    color: colors.textMuted,
     textAlign: "center",
   },
   row: {
     flexDirection: "row",
-    marginBottom: 16,
+    alignItems: "center",
+    padding: spacing.md,
+    marginBottom: spacing.sm,
   },
   image: {
-    width: 80,
-    height: 110,
-    borderRadius: 6,
-    backgroundColor: "#eee",
+    width: 52,
+    height: 72,
+    borderRadius: radii.sm,
+    backgroundColor: colors.background,
   },
   imagePlaceholder: {
     alignItems: "center",
     justifyContent: "center",
   },
   imagePlaceholderText: {
-    fontSize: 12,
-    color: "#999",
+    fontFamily: fontFamily.regular,
+    fontSize: 10,
+    color: colors.textMuted,
     textAlign: "center",
   },
-  rowText: {
-    marginLeft: 12,
-    justifyContent: "center",
-    flexShrink: 1,
+  rowMiddle: {
+    flex: 1,
+    marginLeft: spacing.md,
+    marginRight: spacing.sm,
   },
   cardName: {
-    fontSize: 16,
-    fontWeight: "bold",
+    fontFamily: fontFamily.semiBold,
+    fontSize: fontSize.md,
+    color: colors.text,
   },
-  cardMeta: {
-    fontSize: 14,
-    color: "#666",
+  cardSubtitle: {
+    fontFamily: fontFamily.regular,
+    fontSize: fontSize.sm,
+    color: colors.textMuted,
     marginTop: 2,
   },
   cardPrice: {
-    fontSize: 14,
-    fontWeight: "600",
-    marginTop: 4,
+    ...tabularNums,
+    fontFamily: fontFamily.semiBold,
+    fontSize: fontSize.md,
+    color: colors.text,
   },
-  loadMoreButton: {
-    alignSelf: "center",
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    marginVertical: 16,
-    borderRadius: 8,
-    backgroundColor: "#eee",
-  },
-  loadMoreText: {
-    fontSize: 16,
-    fontWeight: "600",
+  loadMoreWrap: {
+    alignItems: "center",
+    marginVertical: spacing.lg,
   },
   pickerContainer: {
     flex: 1,
+    backgroundColor: colors.background,
     paddingTop: 60,
-    paddingHorizontal: 16,
+    paddingHorizontal: spacing.lg,
   },
   pickerHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 16,
+    marginBottom: spacing.lg,
   },
   pickerTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
+    fontFamily: fontFamily.bold,
+    fontSize: fontSize.xl,
+    color: colors.text,
   },
   pickerClose: {
-    fontSize: 16,
-    color: "#333",
-    fontWeight: "600",
+    fontFamily: fontFamily.semiBold,
+    fontSize: fontSize.md,
+    color: colors.accent,
   },
   setRow: {
-    paddingVertical: 12,
+    paddingVertical: spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: "#eee",
+    borderBottomColor: colors.border,
   },
   setRowText: {
-    fontSize: 16,
+    fontFamily: fontFamily.regular,
+    fontSize: fontSize.md,
+    color: colors.text,
   },
 });
