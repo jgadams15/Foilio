@@ -3,6 +3,8 @@
 // for it in _layout.tsx.
 import { StyleSheet, Text, View } from "react-native";
 
+import { colors, fontFamily, fontSize, spacing } from "@/theme";
+
 export default function ScanScreen() {
   return (
     <View style={styles.container}>
@@ -15,18 +17,21 @@ export default function ScanScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: colors.background,
     alignItems: "center",
     justifyContent: "center",
-    padding: 24,
+    padding: spacing.xl,
   },
   title: {
-    fontSize: 32,
-    fontWeight: "bold",
-    marginBottom: 8,
+    fontFamily: fontFamily.bold,
+    fontSize: fontSize.xxl,
+    color: colors.text,
+    marginBottom: spacing.sm,
   },
   subtitle: {
-    fontSize: 16,
-    color: "#666",
+    fontFamily: fontFamily.regular,
+    fontSize: fontSize.md,
+    color: colors.textMuted,
     textAlign: "center",
   },
 });
