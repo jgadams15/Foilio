@@ -22,18 +22,24 @@ export interface Card {
   rarity?: string;
   /** The card's illustrator. Undefined until details have loaded, or if the provider has none. */
   artist?: string;
-  /** Every known price for this card (different condition/grade). Empty until details have loaded, or if the provider has none. */
+  /** Every known price for this card (different finish/condition/grade). Empty until details have loaded, or if the provider has none. */
   prices: Price[];
+  /** Every finish this card exists in (e.g. "Normal", "Reverse Holo"), whether or not
+   * it currently has a price in `prices`. Empty until details have loaded. */
+  finishes: string[];
   /** True once the per-card detail request has finished (set name + prices are final). */
   detailsLoaded: boolean;
 }
 
-/** One market price for a card in a specific condition or grade. A card can
- * have several (e.g. a raw price and, once a graded data source exists,
- * several PSA/BGS grades). */
+/** One market price for a card in a specific finish, condition, or grade. A
+ * card can have several (different finishes, and once a graded data source
+ * exists, several PSA/BGS grades). Always a real, known price — a finish
+ * that exists but has no price shows up in `Card.finishes` instead. */
 export interface Price {
   amount: number;
   currency: "USD" | "EUR";
+  /** e.g. "Normal", "Holo", "Reverse Holo", "1st Edition". */
+  finish: string;
   /** e.g. "Raw / Near Mint", "PSA 10", "BGS 9.5". */
   condition: string;
 }

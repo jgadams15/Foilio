@@ -21,7 +21,15 @@ import {
 // CardDataProvider interface — never to TCGdex specifics directly — so a
 // future paid data source can be swapped in by changing that one export,
 // with no changes here.
-import { buildCardImageUrl, Card, CardSet, cardDataProvider, formatPriceDisplay, Price, toUsdAmount } from "@foilio/shared";
+import {
+  buildCardImageUrl,
+  Card,
+  CardSet,
+  cardDataProvider,
+  formatPriceRangeDisplay,
+  Price,
+  toUsdAmount,
+} from "@foilio/shared";
 
 import { Button, Card as CardSurface, Chip } from "@/components";
 import { colors, fontFamily, fontSize, radii, spacing, tabularNums } from "@/theme";
@@ -342,7 +350,7 @@ export default function SearchScreen() {
 
 function CardRow({ card, onPress }: { card: Card; onPress: () => void }) {
   const imageUri = card.imageUrl ? buildCardImageUrl(card.imageUrl) : undefined;
-  const price = primaryPrice(card);
+  const priceLabel = card.prices.length > 0 ? formatPriceRangeDisplay(card.prices) : "No price";
   const subtitle = card.detailsLoaded ? `${card.setName ?? "Unknown set"} · #${card.localId}` : "Loading…";
 
   return (
@@ -363,9 +371,7 @@ function CardRow({ card, onPress }: { card: Card; onPress: () => void }) {
             {subtitle}
           </Text>
         </View>
-        {card.detailsLoaded && (
-          <Text style={styles.cardPrice}>{price ? formatPriceDisplay(price) : "No price"}</Text>
-        )}
+        {card.detailsLoaded && <Text style={styles.cardPrice}>{priceLabel}</Text>}
       </CardSurface>
     </Pressable>
   );

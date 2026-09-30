@@ -19,12 +19,17 @@ import {
   Card,
   cardDataProvider,
   formatPriceDisplay,
+  pickDefaultFinish,
 } from "@foilio/shared";
 
-import { Card as CardSurface, Chip, SectionLabel } from "@/components";
+import { Card as CardSurface, Chip, FinishShimmer, SectionLabel } from "@/components";
 import { colors, fontFamily, fontSize, radii, spacing, tabularNums } from "@/theme";
 
 type Status = "loading" | "ready" | "error";
+
+// A shimmer effect only reads as "holo" on finishes that are actually
+// holographic in real life.
+const SHIMMER_FINISHES = new Set(["Holo", "Reverse Holo", "1st Edition Holo"]);
 
 // eBay doesn't have an official free "look up sold listings" API we can call
 // from the client, so for now each button opens an eBay search in the
@@ -38,6 +43,7 @@ export default function CardDetailScreen() {
   const [card, setCard] = useState<Card | null>(null);
   const [status, setStatus] = useState<Status>("loading");
   const [imageViewerVisible, setImageViewerVisible] = useState(false);
+  const [selectedFinish, setSelectedFinish] = useState<string | undefined>(undefined);
 
   useEffect(() => {
     if (!id) return;
@@ -53,6 +59,7 @@ export default function CardDetailScreen() {
       .getCardDetails(id, controller.signal)
       .then((result) => {
         setCard(result);
+        setSelectedFinish(pickDefaultFinish(result));
         setStatus("ready");
       })
       .catch((error: unknown) => {
@@ -64,6 +71,8 @@ export default function CardDetailScreen() {
   }, [id]);
 
   const imageUrl = card?.imageUrl ? buildCardImageUrl(card.imageUrl, "high") : undefined;
+  const selectedPrice = card?.prices.find((price) => price.finish === selectedFinish);
+  const showsShimmer = Boolean(selectedFinish && SHIMMER_FINISHES.has(selectedFinish));
 
   return (
     <View style={styles.container}>
@@ -84,13 +93,21 @@ export default function CardDetailScreen() {
       {status === "ready" && card && (
         <ScrollView contentContainerStyle={styles.content}>
           <Pressable disabled={!imageUrl} onPress={() => setImageViewerVisible(true)}>
-            {imageUrl ? (
-              <Image source={{ uri: imageUrl }} style={styles.image} contentFit="contain" />
-            ) : (
-              <View style={[styles.image, styles.imagePlaceholder]}>
-                <Text style={styles.imagePlaceholderText}>No image</Text>
-              </View>
-            )}
+            <View style={styles.imageWrap}>
+              {imageUrl ? (
+                <Image source={{ uri: imageUrl }} style={styles.image} contentFit="contain" />
+              ) : (
+                <View style={[styles.image, styles.imagePlaceholder]}>
+                  <Text style={styles.imagePlaceholderText}>No image</Text>
+                </View>
+              )}
+              {showsShimmer && <FinishShimmer />}
+              {selectedFinish && (
+                <View style={styles.finishBadge}>
+                  <Text style={styles.finishBadgeText}>{selectedFinish}</Text>
+                </View>
+              )}
+            </View>
           </Pressable>
 
           <Text style={styles.name}>{card.name}</Text>
@@ -106,20 +123,32 @@ export default function CardDetailScreen() {
           {card.rarity && <Text style={styles.meta}>{card.rarity}</Text>}
           {card.artist && <Text style={styles.meta}>Illustrated by {card.artist}</Text>}
 
-          <View style={styles.section}>
-            <SectionLabel>Prices</SectionLabel>
-            {card.prices.length === 0 ? (
-              <Text style={styles.message}>No price available.</Text>
-            ) : (
-              <CardSurface style={styles.priceCard}>
-                {card.prices.map((price, index) => (
-                  <View key={index} style={[styles.priceRow, index > 0 && styles.priceRowDivider]}>
-                    <Text style={styles.priceCondition}>{price.condition}</Text>
-                    <Text style={styles.priceAmount}>{formatPriceDisplay(price)}</Text>
-                  </View>
+          {card.finishes.length > 1 && (
+            <View style={styles.section}>
+              <SectionLabel>Finish</SectionLabel>
+              <View style={styles.finishRow}>
+                {card.finishes.map((finish) => (
+                  <Chip
+                    key={finish}
+                    label={finish}
+                    selected={finish === selectedFinish}
+                    onPress={() => setSelectedFinish(finish)}
+                  />
                 ))}
-              </CardSurface>
-            )}
+              </View>
+            </View>
+          )}
+
+          <View style={styles.section}>
+            <SectionLabel>Price</SectionLabel>
+            <CardSurface style={styles.priceCard}>
+              <View style={styles.priceRow}>
+                <Text style={styles.priceCondition}>{selectedPrice?.condition ?? "Raw / Near Mint"}</Text>
+                <Text style={styles.priceAmount}>
+                  {selectedPrice ? formatPriceDisplay(selectedPrice) : "Price unavailable"}
+                </Text>
+              </View>
+            </CardSurface>
           </View>
 
           <View style={styles.section}>
@@ -134,6 +163,7 @@ export default function CardDetailScreen() {
                       cardName: card.name,
                       setName: card.setName,
                       localId: card.localId,
+                      finish: selectedFinish ?? "Normal",
                       grade,
                     });
                     Linking.openURL(url);
@@ -173,6 +203,10 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     textAlign: "center",
   },
+  imageWrap: {
+    width: 240,
+    height: 330,
+  },
   image: {
     width: 240,
     height: 330,
@@ -187,6 +221,20 @@ const styles = StyleSheet.create({
     fontFamily: fontFamily.regular,
     fontSize: fontSize.sm,
     color: colors.textMuted,
+  },
+  finishBadge: {
+    position: "absolute",
+    right: spacing.sm,
+    bottom: spacing.sm,
+    paddingVertical: spacing.xs / 2,
+    paddingHorizontal: spacing.sm,
+    borderRadius: radii.pill,
+    backgroundColor: colors.accent,
+  },
+  finishBadgeText: {
+    fontFamily: fontFamily.semiBold,
+    fontSize: fontSize.xs,
+    color: colors.text,
   },
   name: {
     fontFamily: fontFamily.bold,
@@ -231,9 +279,10 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.lg,
   },
-  priceRowDivider: {
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
+  finishRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: spacing.sm,
   },
   priceCondition: {
     fontFamily: fontFamily.regular,
