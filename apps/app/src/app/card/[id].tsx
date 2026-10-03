@@ -21,6 +21,9 @@ import {
   formatPriceDisplay,
 } from "@foilio/shared";
 
+import { Card as CardSurface, Chip, SectionLabel } from "@/components";
+import { colors, fontFamily, fontSize, radii, spacing, tabularNums } from "@/theme";
+
 type Status = "loading" | "ready" | "error";
 
 // eBay doesn't have an official free "look up sold listings" API we can call
@@ -64,9 +67,17 @@ export default function CardDetailScreen() {
 
   return (
     <View style={styles.container}>
-      <Stack.Screen options={{ title: card?.name ?? "Card" }} />
+      <Stack.Screen
+        options={{
+          title: card?.name ?? "Card",
+          headerStyle: { backgroundColor: colors.background },
+          headerTitleStyle: { fontFamily: fontFamily.semiBold, color: colors.text },
+          headerTintColor: colors.text,
+          headerShadowVisible: false,
+        }}
+      />
 
-      {status === "loading" && <ActivityIndicator style={styles.spinner} size="large" />}
+      {status === "loading" && <ActivityIndicator style={styles.spinner} size="large" color={colors.accent} />}
 
       {status === "error" && <Text style={styles.message}>Something went wrong. Check your connection and try again.</Text>}
 
@@ -96,26 +107,28 @@ export default function CardDetailScreen() {
           {card.artist && <Text style={styles.meta}>Illustrated by {card.artist}</Text>}
 
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Prices</Text>
+            <SectionLabel>Prices</SectionLabel>
             {card.prices.length === 0 ? (
               <Text style={styles.message}>No price available.</Text>
             ) : (
-              card.prices.map((price, index) => (
-                <View key={index} style={styles.priceRow}>
-                  <Text style={styles.priceCondition}>{price.condition}</Text>
-                  <Text style={styles.priceAmount}>{formatPriceDisplay(price)}</Text>
-                </View>
-              ))
+              <CardSurface style={styles.priceCard}>
+                {card.prices.map((price, index) => (
+                  <View key={index} style={[styles.priceRow, index > 0 && styles.priceRowDivider]}>
+                    <Text style={styles.priceCondition}>{price.condition}</Text>
+                    <Text style={styles.priceAmount}>{formatPriceDisplay(price)}</Text>
+                  </View>
+                ))}
+              </CardSurface>
             )}
           </View>
 
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Find on eBay</Text>
+            <SectionLabel>Find on eBay</SectionLabel>
             <View style={styles.ebayRow}>
               {EBAY_GRADES.map((grade) => (
-                <Pressable
+                <Chip
                   key={grade}
-                  style={styles.ebayButton}
+                  label={grade}
                   onPress={() => {
                     const url = buildEbaySearchUrl({
                       cardName: card.name,
@@ -125,9 +138,7 @@ export default function CardDetailScreen() {
                     });
                     Linking.openURL(url);
                   }}
-                >
-                  <Text style={styles.ebayButtonText}>{grade}</Text>
-                </Pressable>
+                />
               ))}
             </View>
           </View>
@@ -146,98 +157,99 @@ export default function CardDetailScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: colors.background,
   },
   content: {
-    padding: 16,
+    padding: spacing.lg,
     alignItems: "center",
   },
   spinner: {
-    marginTop: 24,
+    marginTop: spacing.xl,
   },
   message: {
-    marginTop: 24,
-    fontSize: 16,
-    color: "#666",
+    marginTop: spacing.xl,
+    fontFamily: fontFamily.regular,
+    fontSize: fontSize.md,
+    color: colors.textMuted,
     textAlign: "center",
   },
   image: {
     width: 240,
     height: 330,
-    borderRadius: 10,
-    backgroundColor: "#eee",
+    borderRadius: radii.lg,
+    backgroundColor: colors.surface,
   },
   imagePlaceholder: {
     alignItems: "center",
     justifyContent: "center",
   },
   imagePlaceholderText: {
-    fontSize: 14,
-    color: "#999",
+    fontFamily: fontFamily.regular,
+    fontSize: fontSize.sm,
+    color: colors.textMuted,
   },
   name: {
-    fontSize: 24,
-    fontWeight: "bold",
-    marginTop: 16,
+    fontFamily: fontFamily.bold,
+    fontSize: fontSize.xxl,
+    color: colors.text,
+    marginTop: spacing.lg,
     textAlign: "center",
   },
   setRow: {
     flexDirection: "row",
     alignItems: "center",
-    marginTop: 8,
-    gap: 6,
+    marginTop: spacing.sm,
+    gap: spacing.xs + 2,
   },
   setSymbol: {
     width: 18,
     height: 18,
   },
   setName: {
-    fontSize: 16,
-    color: "#333",
+    fontFamily: fontFamily.medium,
+    fontSize: fontSize.md,
+    color: colors.text,
   },
   meta: {
-    fontSize: 14,
-    color: "#666",
-    marginTop: 4,
+    fontFamily: fontFamily.regular,
+    fontSize: fontSize.sm,
+    color: colors.textMuted,
+    marginTop: spacing.xs,
   },
   section: {
     alignSelf: "stretch",
-    marginTop: 24,
+    marginTop: spacing.xl,
   },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    marginBottom: 8,
+  priceCard: {
+    padding: 0,
+    overflow: "hidden",
   },
   priceRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    paddingVertical: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: "#eee",
+    alignItems: "center",
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
+  },
+  priceRowDivider: {
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
   },
   priceCondition: {
-    fontSize: 15,
-    color: "#333",
+    fontFamily: fontFamily.regular,
+    fontSize: fontSize.md,
+    color: colors.textMuted,
   },
   priceAmount: {
-    fontSize: 15,
-    fontWeight: "600",
+    ...tabularNums,
+    fontFamily: fontFamily.semiBold,
+    fontSize: fontSize.md,
+    color: colors.text,
   },
   ebayRow: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 8,
-  },
-  ebayButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 14,
-    borderRadius: 16,
-    backgroundColor: "#eee",
-  },
-  ebayButtonText: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#333",
+    gap: spacing.sm,
   },
   viewerOverlay: {
     flex: 1,
