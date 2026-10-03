@@ -11,3 +11,4 @@ and any significant tradeoffs made along the way. Not user-facing documentation.
   - [pricing.md](decisions/pricing.md) — currency, condition/grade, and the graded-price plan.
   - [set-search.md](decisions/set-search.md) — how searching by set works.
   - [design.md](decisions/design.md) — the dark UI theme.
+  - [scanner-finish.md](decisions/scanner-finish.md) — how the scanner asks which finish a card is.
