@@ -6,6 +6,7 @@ and any significant tradeoffs made along the way. Not user-facing documentation.
 
 - [roadmap.md](roadmap.md) — build order, what's done and what's planned.
 - `decisions/` — one short note per decision:
+  - [free-only.md](decisions/free-only.md) — free services only, no paid APIs.
   - [card-data-source.md](decisions/card-data-source.md) — why TCGdex.
   - [provider-adapter.md](decisions/provider-adapter.md) — why card data goes through one interface.
   - [pricing.md](decisions/pricing.md) — currency, condition/grade, and the graded-price plan.

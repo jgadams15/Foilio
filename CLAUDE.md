@@ -14,6 +14,7 @@ eBay price lookups); an on-device ML card scanner comes last.
 
 ## Rules
 
+- Free services only — TCGdex, eBay Browse API free tier, Supabase free plan, Expo Go. No paid APIs or plans. See `docs/decisions/free-only.md`.
 - Get card data only through `CardDataProvider` (`packages/shared/src/api`). Never call TCGdex or any other API from a screen directly — that's how we can swap providers later without touching UI.
 - All colors, fonts, and spacing come from `apps/app/src/theme`. Never hard-code a color or size in a screen or component.
 - Secrets and API keys never go in the app. They live in `.env` (local, gitignored) or on the Supabase server side.
