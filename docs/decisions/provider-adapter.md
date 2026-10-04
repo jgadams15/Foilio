@@ -5,9 +5,10 @@
 
 **Why:** [TCGdex](card-data-source.md) is free but may not stay sufficient (e.g. no
 graded prices, limited image coverage). Screens call `cardDataProvider` from
-`packages/shared`, never a specific provider directly, so swapping to a paid API later
+`packages/shared`, never a specific provider directly, so swapping to a different free API later
 means writing one new class and changing one line — no screen changes.
 
-**Revisit:** If/when a paid data source is added (e.g. for graded prices or better
+**Revisit:** If/when another free data source is added (e.g. eBay for graded prices, or better
 images), write a new `CardDataProvider` implementation rather than editing
-`TcgdexProvider` in place, so both can coexist if needed.
+`TcgdexProvider` in place, so both can coexist if needed. Any new source must follow
+[free-only.md](free-only.md).
