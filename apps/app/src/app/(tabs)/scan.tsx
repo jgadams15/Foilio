@@ -1,37 +1,27 @@
-// This is a placeholder screen for the Scan tab. Like index.tsx, its file
-// name ("scan") becomes its route, and the tab bar shows the title we set
-// for it in _layout.tsx.
-import { StyleSheet, Text, View } from "react-native";
+// The Scan tab. Phase 1 of the scanner: take (or, on web, upload) a photo
+// of a card and check it. Recognizing which card it is comes later.
+//
+// The screen has two steps: capturing a photo, then reviewing it. We only
+// keep track of the photo's address — no photo means we're still capturing.
+// The real work lives in src/scanner, so this file just switches between
+// the two steps.
+import { useState } from "react";
+import { Platform } from "react-native";
 
-import { colors, fontFamily, fontSize, spacing } from "@/theme";
+import { CameraCapture, PhotoReview } from "@/scanner";
 
 export default function ScanScreen() {
-  return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Scan</Text>
-      <Text style={styles.subtitle}>Scan a card to add it to your portfolio.</Text>
-    </View>
-  );
-}
+  const [photoUri, setPhotoUri] = useState<string | null>(null);
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-    alignItems: "center",
-    justifyContent: "center",
-    padding: spacing.xl,
-  },
-  title: {
-    fontFamily: fontFamily.bold,
-    fontSize: fontSize.xxl,
-    color: colors.text,
-    marginBottom: spacing.sm,
-  },
-  subtitle: {
-    fontFamily: fontFamily.regular,
-    fontSize: fontSize.md,
-    color: colors.textMuted,
-    textAlign: "center",
-  },
-});
+  if (photoUri) {
+    return (
+      <PhotoReview
+        uri={photoUri}
+        retakeLabel={Platform.OS === "web" ? "Choose another" : "Retake"}
+        onRetake={() => setPhotoUri(null)}
+      />
+    );
+  }
+
+  return <CameraCapture onCapture={setPhotoUri} />;
+}

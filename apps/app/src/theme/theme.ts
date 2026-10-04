@@ -17,6 +17,10 @@ export const colors = {
   accent: "#6366F1",
   gain: "#22C55E",
   loss: "#EF4444",
+  /** Behind the live camera preview, before the first frame arrives. */
+  cameraBackground: "#000000",
+  /** See-through dark wash laid over the camera, outside the card outline. */
+  scrim: "rgba(15, 23, 42, 0.6)",
 } as const;
 
 // A consistent multiple-of-4 spacing scale, used for padding, margin, and gaps.
@@ -27,6 +31,16 @@ export const spacing = {
   lg: 16,
   xl: 24,
   xxl: 32,
+} as const;
+
+// Fixed sizes for specific controls that don't fit the spacing scale.
+export const sizes = {
+  /** The round shutter button on the Scan tab. */
+  captureButton: 72,
+  /** The circle around a big icon heading a message, e.g. "Allow camera". */
+  iconCircle: 72,
+  /** Widest a block of centered text or buttons should get on big screens. */
+  readableWidth: 360,
 } as const;
 
 export const radii = {

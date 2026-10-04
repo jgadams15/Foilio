@@ -15,4 +15,5 @@ behind each piece. Everything here uses free services only — see
   [portfolio-storage](decisions/portfolio-storage.md)
 - ⬜ Planned — accounts + cloud sync (Supabase free plan)
 - ⬜ Planned — price history chart
+- ✅ Scanner phase 1: camera capture with card outline (web: upload a photo)
 - ⬜ Planned — on-device ML card scanner (last — see `ml/README.md`)
