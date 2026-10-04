@@ -1,10 +1,12 @@
 # ml/data
 
-Card image datasets used to train and evaluate the recognition model.
+Card data for the scanner. Everything here is gitignored and rebuilt by `ml/scripts`;
+only this README and the folder structure are tracked.
 
-- `raw/` — unmodified card images downloaded from the Pokémon TCG data API (or TCGdex),
-  organized by set/card ID.
-- `processed/` — preprocessed/augmented versions of the raw images (resized, normalized,
-  augmented) ready for training or embedding generation.
-
-Dataset files themselves are gitignored; only this structure and its READMEs are tracked.
+- `cards.json` — the full English card list from TCGdex (id, name, image URL), saved by
+  `download_images.py`.
+- `images/` — one small image per card, `<card id>.webp` (ids with characters Windows
+  can't use in file names are percent-encoded, e.g. `exu-%21.webp`).
+- `index/` — written by `build_index.py`: `embeddings.npy` (one row per card),
+  `card_ids.json` (which card each row is), and `info.json` (model settings used).
+- `raw/`, `processed/` — reserved for training data, if we ever fine-tune a model.

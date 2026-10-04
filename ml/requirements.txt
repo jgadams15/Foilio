@@ -1,0 +1,14 @@
+# Card scanner pipeline (ml/scripts). Install into a virtual environment —
+# see ml/README.md for step-by-step Windows setup.
+
+# Downloading card data and images
+requests>=2.32
+tqdm>=4.66
+
+# Images and math
+pillow>=11.0
+numpy>=2.0
+
+# The pretrained image model (DINOv2), run on CPU
+torch>=2.9
+transformers>=4.56

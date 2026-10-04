@@ -16,4 +16,9 @@ behind each piece. Everything here uses free services only — see
 - ⬜ Planned — accounts + cloud sync (Supabase free plan)
 - ⬜ Planned — price history chart
 - ✅ Scanner phase 1: camera capture with card outline (web: upload a photo)
-- ⬜ Planned — on-device ML card scanner (last — see `ml/README.md`)
+- ✅ Scanner phase 2: card recognition prototype in Python — pretrained DINOv2
+  embeddings + nearest-neighbor search over every card image (see
+  [scanner](decisions/scanner.md) and `ml/README.md`)
+- ⬜ Planned — scanner phase 3: automatic card cropping and accuracy testing on real
+  phone photos
+- ⬜ Planned — scanner phase 4: run recognition on the phone and connect it to the Scan tab
