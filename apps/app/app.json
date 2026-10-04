@@ -40,7 +40,23 @@
           "style": "light"
         }
       ],
-      "@react-native-community/datetimepicker"
+      "@react-native-community/datetimepicker",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Foilio uses your camera to take a photo of a Pokémon card so it can be identified.",
+          "microphonePermission": false,
+          "recordAudioAndroid": false
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Foilio lets you pick a photo of a Pokémon card from your library so it can be identified.",
+          "cameraPermission": false,
+          "microphonePermission": false
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,
