@@ -47,6 +47,8 @@ ml/data/raw/*
 !ml/data/raw/.gitkeep
 ml/data/processed/*
 !ml/data/processed/.gitkeep
+# Personal photos for testing the scanner.
+ml/test_photos/
 # Downloaded pretrained model weights (Hugging Face cache) and trained checkpoints.
 ml/models/*
 !ml/models/.gitkeep
