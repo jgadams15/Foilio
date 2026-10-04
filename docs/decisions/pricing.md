@@ -38,13 +38,16 @@
 - Graded prices (PSA/BGS/CGC) aren't available yet — the card detail screen only opens an
   eBay search link per grade for now, it doesn't show live graded prices.
 
-**Plan for graded prices:** Use the eBay Browse API to show active listings (not
-historical sold prices), called from a Supabase Edge Function so the eBay API secret
-never ships in the app.
+**Plan for graded prices:** Use the eBay Browse API (free tier) to show active listings
+(not historical sold prices), called from a Supabase Edge Function so the eBay API secret
+never ships in the app. Because these are active listings, graded prices are always
+labeled as **asking prices** in the app — never shown as sold or market value.
 
 **Why not sold prices:** eBay's sold/completed-listings data (Marketplace Insights API)
-is restricted to approved partners, and scraping eBay's sold listings is ruled out (fragile
-and against eBay's terms).
+is restricted to approved partners, scraping eBay's sold listings is ruled out (fragile
+and against eBay's terms), and paid sources like PriceCharting are ruled out by
+[free-only.md](free-only.md).
 
-**Revisit:** A paid source like PriceCharting is an option later if eBay's active-listing
-data isn't good enough for graded prices.
+**Revisit:** If eBay's active-listing data isn't good enough for graded prices, look for
+another free source — or improve how we summarize the listings (e.g. median instead of
+lowest asking price) — rather than a paid one.
