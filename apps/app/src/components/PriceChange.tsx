@@ -1,7 +1,5 @@
 // A green ▲ or red ▼ showing a price change, as an amount and a percent.
-// Not wired up to real data anywhere yet (nothing in the app computes a
-// gain/loss over time), but the app's dark theme needs this piece ready for
-// when a portfolio view does.
+// Used for gain/loss in the portfolio: current value vs. what you paid.
 import { StyleSheet, Text, View } from "react-native";
 
 import { colors, fontFamily, fontSize, tabularNums } from "@/theme";
@@ -9,22 +7,25 @@ import { colors, fontFamily, fontSize, tabularNums } from "@/theme";
 interface PriceChangeProps {
   /** Signed change in the underlying currency, e.g. 1.23 or -0.45. */
   amount: number;
-  /** Signed percent change, e.g. 4.5 or -2.1. */
-  percent: number;
+  /** Signed percent change, e.g. 4.5 or -2.1. Left out when there's no
+   * meaningful percent (e.g. the card cost $0). */
+  percent?: number;
   currencySymbol?: string;
+  size?: "sm" | "md";
 }
 
-export function PriceChange({ amount, percent, currencySymbol = "$" }: PriceChangeProps) {
+export function PriceChange({ amount, percent, currencySymbol = "$", size = "sm" }: PriceChangeProps) {
   const isGain = amount >= 0;
   const color = isGain ? colors.gain : colors.loss;
   const arrow = isGain ? "▲" : "▼";
+  const formattedAmount = Math.abs(amount).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
   return (
     <View style={styles.row}>
-      <Text style={[styles.text, tabularNums, { color }]}>
+      <Text style={[styles.text, tabularNums, size === "md" && styles.textMd, { color }]}>
         {arrow} {currencySymbol}
-        {Math.abs(amount).toFixed(2)} ({isGain ? "+" : "-"}
-        {Math.abs(percent).toFixed(2)}%)
+        {formattedAmount}
+        {percent !== undefined && ` (${isGain ? "+" : "-"}${Math.abs(percent).toFixed(2)}%)`}
       </Text>
     </View>
   );
@@ -38,5 +39,8 @@ const styles = StyleSheet.create({
   text: {
     fontFamily: fontFamily.semiBold,
     fontSize: fontSize.sm,
+  },
+  textMd: {
+    fontSize: fontSize.md,
   },
 });

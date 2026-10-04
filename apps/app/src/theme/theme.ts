@@ -43,6 +43,8 @@ export const fontSize = {
   lg: 17,
   xl: 20,
   xxl: 28,
+  /** Big headline numbers, e.g. the portfolio's total value. */
+  display: 36,
 } as const;
 
 // Inter, loaded via @expo-google-fonts/inter in the root layout. These

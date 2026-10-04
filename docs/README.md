@@ -13,3 +13,4 @@ and any significant tradeoffs made along the way. Not user-facing documentation.
   - [set-search.md](decisions/set-search.md) — how searching by set works.
   - [design.md](decisions/design.md) — the dark UI theme.
   - [scanner-finish.md](decisions/scanner-finish.md) — how the scanner asks which finish a card is.
+  - [portfolio-storage.md](decisions/portfolio-storage.md) — why the portfolio is on-device first, and how values/gain are counted.
