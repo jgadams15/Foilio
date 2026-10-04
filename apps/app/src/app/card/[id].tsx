@@ -6,7 +6,7 @@
 // (tabs)/search.tsx, whose URL ("/search") never changes.
 import { Image } from "expo-image";
 import * as Linking from "expo-linking";
-import { Stack, useLocalSearchParams } from "expo-router";
+import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import { ActivityIndicator, Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
@@ -22,7 +22,8 @@ import {
   pickDefaultFinish,
 } from "@foilio/shared";
 
-import { Card as CardSurface, Chip, FinishShimmer, SectionLabel } from "@/components";
+import { Button, Card as CardSurface, Chip, FinishShimmer, SectionLabel } from "@/components";
+import { usePortfolio } from "@/portfolio";
 import { colors, fontFamily, fontSize, radii, spacing, tabularNums } from "@/theme";
 
 type Status = "loading" | "ready" | "error";
@@ -44,6 +45,10 @@ export default function CardDetailScreen() {
   const [status, setStatus] = useState<Status>("loading");
   const [imageViewerVisible, setImageViewerVisible] = useState(false);
   const [selectedFinish, setSelectedFinish] = useState<string | undefined>(undefined);
+  const router = useRouter();
+  const { entries } = usePortfolio();
+  // Every copy you own of this card, across all finishes, grades, and purchases.
+  const ownedCount = entries.filter((entry) => entry.cardId === id).reduce((sum, entry) => sum + entry.quantity, 0);
 
   useEffect(() => {
     if (!id) return;
@@ -149,6 +154,19 @@ export default function CardDetailScreen() {
                 </Text>
               </View>
             </CardSurface>
+          </View>
+
+          <View style={styles.section}>
+            {ownedCount > 0 && <Text style={styles.owned}>In your portfolio ×{ownedCount}</Text>}
+            <Button
+              label="Add to portfolio"
+              onPress={() =>
+                router.push({
+                  pathname: "/portfolio/entry",
+                  params: { cardId: card.id, ...(selectedFinish ? { finish: selectedFinish } : {}) },
+                })
+              }
+            />
           </View>
 
           <View style={styles.section}>
@@ -294,6 +312,13 @@ const styles = StyleSheet.create({
     fontFamily: fontFamily.semiBold,
     fontSize: fontSize.md,
     color: colors.text,
+  },
+  owned: {
+    fontFamily: fontFamily.medium,
+    fontSize: fontSize.sm,
+    color: colors.gain,
+    textAlign: "center",
+    marginBottom: spacing.sm,
   },
   ebayRow: {
     flexDirection: "row",

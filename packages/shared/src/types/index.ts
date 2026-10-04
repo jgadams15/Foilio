@@ -50,3 +50,45 @@ export interface CardSet {
   name: string;
   logoUrl?: string;
 }
+
+/** A grading company we know how to label. */
+export type GradingCompany = "PSA" | "BGS" | "CGC";
+
+/** Whether a copy you own is raw (ungraded) or professionally graded. One
+ * of two shapes, so impossible combinations like "Raw PSA 10" can't be
+ * stored. Raw has no wear condition (Near Mint, Played…) yet because no
+ * price source breaks prices down by condition. */
+export type Grading = { kind: "raw" } | { kind: "graded"; company: GradingCompany; grade: string };
+
+/** One purchase of a card in your portfolio — like a "lot" in a brokerage
+ * account. Buying the same card again later is a new entry, so each
+ * purchase keeps its own price and date. The Portfolio list groups entries
+ * that share a card, finish, and grading into one row. */
+export interface PortfolioEntry {
+  /** A UUID, so entries can move to a cloud database later without new ids. */
+  id: string;
+  cardId: string;
+  // A snapshot of the card's details at the time it was added, so the
+  // portfolio list can show without re-fetching every card.
+  cardName: string;
+  setName?: string;
+  /** Card number within its set, e.g. "136". */
+  localId: string;
+  /** Base image URL, same format as Card.imageUrl. */
+  imageUrl?: string;
+  /** e.g. "Normal", "Reverse Holo" — one of the card's `finishes`. */
+  finish: string;
+  grading: Grading;
+  /** How many copies this purchase was. Always a whole number, 1 or more. */
+  quantity: number;
+  /** What you paid for ONE copy, in USD. Undefined if you didn't record it. */
+  purchasePrice?: number;
+  /** The day you bought it, as "YYYY-MM-DD". */
+  purchaseDate?: string;
+  notes?: string;
+  /** When this entry was added to the app, as a full ISO timestamp. */
+  addedAt: string;
+}
+
+/** What you provide to add an entry — the store fills in `id` and `addedAt`. */
+export type NewPortfolioEntry = Omit<PortfolioEntry, "id" | "addedAt">;

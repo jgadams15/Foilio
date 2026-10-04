@@ -84,3 +84,28 @@ export function buildEbaySearchUrl(query: EbaySearchQuery): string {
   const params = new URLSearchParams({ _nkw: keywords });
   return `https://www.ebay.com/sch/i.html?${params.toString()}`;
 }
+
+/** A calendar day as "YYYY-MM-DD", in the device's own time zone (not UTC,
+ * so a purchase made late in the evening doesn't land on the next day). */
+export function toLocalDateString(date: Date): string {
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${date.getFullYear()}-${month}-${day}`;
+}
+
+/** The reverse of toLocalDateString, or undefined if `value` isn't a real "YYYY-MM-DD" day. */
+export function parseLocalDateString(value: string): Date | undefined {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value.trim());
+  if (!match) return undefined;
+  const [year, month, day] = [Number(match[1]), Number(match[2]), Number(match[3])];
+  const date = new Date(year, month - 1, day);
+  // new Date() quietly rolls "2026-02-31" over to March 3rd — reject that.
+  if (date.getFullYear() !== year || date.getMonth() !== month - 1 || date.getDate() !== day) return undefined;
+  return date;
+}
+
+/** "YYYY-MM-DD" shown for people, e.g. "Oct 3, 2026". */
+export function formatDisplayDate(value: string): string {
+  const date = parseLocalDateString(value);
+  return date ? date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : value;
+}
