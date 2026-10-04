@@ -38,10 +38,16 @@ __pycache__/
 venv/
 .venv/
 env/
+# Card list, images, and the embedding index are all re-downloadable/rebuildable.
+ml/data/*
+!ml/data/README.md
+!ml/data/raw/
+!ml/data/processed/
 ml/data/raw/*
 !ml/data/raw/.gitkeep
 ml/data/processed/*
 !ml/data/processed/.gitkeep
+# Downloaded pretrained model weights (Hugging Face cache) and trained checkpoints.
 ml/models/*
 !ml/models/.gitkeep
 !ml/models/README.md
