@@ -5,9 +5,9 @@ domain types, an API client, and general utilities.
 
 - `src/types/` — shared domain types: `Card`, `Price`, `PortfolioEntry`, and related
   types.
-- `src/api/` — a typed client for talking to Supabase and any other backend endpoints
-  (price fetching, card search, etc.), so `apps/app` doesn't duplicate request/response
-  shapes.
+- `src/api/` — the `CardDataProvider` interface (`provider.ts`) and its TCGdex
+  implementation (`tcgdex.ts`). Screens get card data only through this, so the data
+  source can be swapped later. See `docs/decisions/provider-adapter.md`.
 - `src/portfolio/` — the `PortfolioStore` interface, its on-device implementation
   (`LocalPortfolioStore`), and the portfolio math (grouping purchases into holdings,
   value, gain/loss).

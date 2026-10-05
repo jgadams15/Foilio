@@ -1,78 +1,135 @@
 # Foilio
 
-Foilio is a Pokémon card app for iOS, Android, and web from a single codebase. Point your
-phone camera at a card, get it identified on-device, see live market prices, and track it
-in a stock-portfolio-style view of your collection over time.
+**Scan, price, and track your Pokémon card collection like a stock portfolio.**
 
-## Core features
+![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white)
+![Expo SDK 57](https://img.shields.io/badge/Expo-SDK%2057-000020?logo=expo&logoColor=white)
+![React Native](https://img.shields.io/badge/React%20Native-0.86-61DAFB?logo=react&logoColor=black)
+![Python](https://img.shields.io/badge/Python-3.11+-3776AB?logo=python&logoColor=white)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-1. **Card scanner (mobile-first)** — An on-device AI model identifies a physical card from
-   the camera feed (no per-scan server API cost), matched against a card database built
-   from a Pokémon TCG data API (pokemontcg.io or TCGdex). Once identified, the app fetches
-   current prices (TCGplayer via pokemontcg.io/TCGdex, and eBay listings via the eBay
-   Browse API) and lets the user add the card to their portfolio. Web may later support
-   scanning from an uploaded photo instead of a live camera.
-2. **Portfolio** — Tracks owned cards, current total value, gains/losses vs. purchase
-   price, and value history over time via scheduled price snapshots.
-3. **Card search** — Search by name/set, showing prices and card info (set, number,
-   rarity, artist, image).
+Foilio is an Expo (React Native) app for iOS, Android, and web from one TypeScript
+codebase, plus a Python image-recognition pipeline for identifying cards from a photo.
+
+## Screenshots
+
+| Portfolio | Search | Card detail | Scan |
+| :---: | :---: | :---: | :---: |
+| <img src="docs/screenshots/portfolio.png" width="200" alt="Portfolio screen showing total value, gain/loss, and holdings"> | <img src="docs/screenshots/search.png" width="200" alt="Search results for Charizard sorted by highest price"> | <img src="docs/screenshots/card-detail.png" width="200" alt="Base Set Charizard detail with finish picker and price"> | <img src="docs/screenshots/scanner.png" width="200" alt="Scan screen with upload-a-photo option on web"> |
+
+<sub>Captured from the web build at phone width. On a phone, the Scan tab opens the live camera with a card-outline guide.</sub>
+
+## Features
+
+### Built
+
+- **Card search:** search the full TCGdex card catalog by name, filter by set, and sort by newest set or highest price.
+- **Card detail:** artwork, set, rarity, and artist. Prices are shown **per finish** (Normal, Holo,
+  Reverse Holo, 1st Edition…), plus one-tap eBay searches for raw and graded copies.
+- **Portfolio:** add purchases with finish, raw/graded, quantity, price paid, and date. It shows
+  total value and gain/loss for each holding and overall, in a brokerage-style dark UI.
+  Saved on-device, so no account is needed.
+- **Scanner, capture:** camera view with a card-outline guide on iOS/Android, and photo upload on web.
+- **Scanner, recognition prototype (Python):** identifies a card from a photo by comparing
+  DINOv2 image embeddings against an index of every card image.
+
+### In progress / planned
+
+- Run recognition on the phone and connect it to the Scan tab
+- Automatic card cropping and accuracy testing on real phone photos
+- Graded prices from active eBay listings (labeled as asking prices)
+- Accounts and cloud sync (Supabase)
+- Portfolio value-history chart
 
 ## Tech stack
 
-- **Frontend:** Expo (React Native) with Expo Router, TypeScript — iOS, Android, and web
-  from one codebase.
-- **Backend:** Supabase (PostgreSQL, authentication, storage, edge functions, and
-  scheduled functions).
-- **Scanner AI:** Python pipeline that produces a model exported to mobile- and
-  web-friendly formats.
+| Area | Tools |
+| --- | --- |
+| App | Expo SDK 57, React Native, Expo Router, TypeScript, AsyncStorage |
+| Card data | [TCGdex](https://tcgdex.dev) (free, no API key) |
+| Card recognition | Python, PyTorch, Hugging Face Transformers, DINOv2-small, NumPy |
+| Backend (planned) | Supabase free plan: Postgres, auth, edge functions |
 
 ## Architecture
 
-This is a monorepo. Each top-level folder has its own README with more detail.
+An npm-workspaces monorepo:
 
 ```
-apps/app        Expo app: scanner, portfolio, search, auth (init later with create-expo-app)
-supabase/       Supabase project: migrations, edge functions, scheduled functions (init later with supabase init)
-packages/shared Shared TypeScript types, API client, and utilities used by apps/app
-ml/             Python pipeline: data prep, training, evaluation, export to TFLite/Core ML/ONNX/web
-docs/           Architecture notes and decisions
-infra/          Deployment configuration
+apps/app/          Expo app: screens (src/app), components, portfolio, scanner, theme
+packages/shared/   Card types, CardDataProvider + TCGdex adapter, portfolio store and math
+ml/                Python scanner pipeline: download images → build index → match a photo
+docs/              Roadmap and decision records (docs/decisions/)
+supabase/          Backend, not started yet (planned schema in its README)
+infra/             Deployment config, placeholder
 ```
 
-### How the pieces fit together
+Screens never call an API directly. They go through `CardDataProvider` and
+`PortfolioStore` from `packages/shared`, so the data source or storage can be swapped
+without touching UI code.
 
-- `ml/` produces a trained card-recognition model, exported to on-device formats
-  (TFLite/Core ML for mobile, ONNX Runtime Web/TensorFlow.js for web). `apps/app` bundles
-  these exported models to run scanning locally, without a per-scan server call.
-- `apps/app` calls Supabase (`supabase/`) for auth, storage, and data — including reading
-  card/price data that Supabase's edge functions and scheduled functions keep in sync from
-  the Pokémon TCG data API and the eBay Browse API.
-- `supabase/`'s scheduled functions periodically snapshot prices into the database, which
-  powers the portfolio's value-history charts in `apps/app`.
-- `packages/shared` holds the TypeScript types (Card, Price, PortfolioEntry, etc.) and API
-  client code shared between `apps/app` and, where useful, Supabase edge functions.
-- `docs/` and `infra/` support the above with architecture notes and deployment config,
-  respectively.
+## Engineering highlights
 
-## Next steps
+- **Provider adapter pattern:** all card data goes through one `CardDataProvider`
+  interface, currently backed by TCGdex. Switching sources means one new class and a
+  one-line change. → [provider-adapter](docs/decisions/provider-adapter.md)
+- **Per-finish pricing:** a reverse holo can be worth many times its normal print, so every
+  price carries its finish. When the provider data is ambiguous (Cardmarket EUR prices
+  have no finish), Foilio skips the price instead of guessing.
+  → [pricing](docs/decisions/pricing.md)
+- **Embedding-based scanner, no training:** a pretrained DINOv2 model turns each card into
+  a 384-number fingerprint, and recognition is a nearest-neighbor lookup over about 22k cards
+  that takes milliseconds. New sets only need re-indexing, not retraining.
+  → [scanner](docs/decisions/scanner.md)
+- **Why DINOv2, not CLIP:** CLIP groups images by meaning, so every Pikachu looks alike to
+  it. DINOv2 focuses on visual detail like artwork and layout, which is what tells two
+  printings apart. → [scanner](docs/decisions/scanner.md#why-dinov2-rather-than-clip)
+- **Free-only constraint:** no paid APIs or plans. Because the free eBay API only shows
+  active listings, graded prices will always be labeled as *asking* prices, never sold
+  values. → [free-only](docs/decisions/free-only.md)
+- **Local-first portfolio behind an interface:** works with no account today, and entries use
+  UUIDs so a Supabase-backed `PortfolioStore` can replace local storage by changing one line.
+  → [portfolio-storage](docs/decisions/portfolio-storage.md)
 
-- Initialize `apps/app` with `create-expo-app` (TypeScript template, Expo Router).
-- Initialize `supabase/` with `supabase init` and add the migrations/functions described
-  in `supabase/README.md`.
-- Set up `packages/shared` as a real TypeScript package and wire it into `apps/app`.
-- Stand up the `ml/` pipeline: data collection, embedding/model training, evaluation, and
-  export.
-- Copy `.env.example` to `.env` and fill in real API keys and Supabase credentials.
+## Getting started
 
-## Suggested adjustments to consider
+### App
 
-- `packages/shared` could be split into `packages/types` and `packages/api-client` if the
-  API client grows enough logic (e.g. retries, caching) to warrant its own package and
-  release cycle separate from plain type definitions.
-- The scanner's card-fingerprint/embedding index (used to match a live camera frame
-  against the full card database) could live in its own `ml/index/` or even a small
-  service under `supabase/functions/` rather than being bundled fully on-device, if the
-  card database grows too large for a mobile bundle — worth revisiting once the model size
-  is known.
-- `infra/` may eventually want per-environment subfolders (e.g. `infra/staging/`,
-  `infra/production/`) once there's an actual deployment target to configure for.
+Needs [Node.js](https://nodejs.org) LTS, plus the free **Expo Go** app on your phone.
+
+```bash
+npm install          # from the repo root, installs all workspaces
+cd apps/app          # Expo must be run from apps/app, not the root
+npx expo start       # scan the QR code with Expo Go, or press w for web
+```
+
+No API keys are needed. TCGdex is free and keyless.
+
+### Scanner pipeline (optional)
+
+Needs Python 3.11+. From `ml/` (Windows PowerShell shown; see [ml/README.md](ml/README.md)):
+
+```powershell
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+python scripts/download_images.py      # ~22k card images (add --limit 50 for a quick test)
+python scripts/build_index.py          # one embedding per card
+python scripts/match.py path\to\photo.jpg
+```
+
+## Roadmap
+
+Done: search, set filter, card detail with per-finish prices, on-device portfolio, scanner
+capture, and the recognition prototype. Next: on-phone recognition, eBay graded asking
+prices, accounts and sync, and value history. Full list in [docs/roadmap.md](docs/roadmap.md).
+
+## License
+
+[MIT](LICENSE) © 2026 Jackson Adams. The license covers this project's code only.
+
+## Disclaimer
+
+Foilio is an unofficial fan project. It is not affiliated with, endorsed by, or sponsored
+by Nintendo, The Pokémon Company, Creatures, or Game Freak. Pokémon and all related names
+and images are trademarks of their respective owners. Card data and images come from
+[TCGdex](https://tcgdex.dev).

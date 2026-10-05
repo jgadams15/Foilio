@@ -3,7 +3,7 @@
 The Expo (React Native) app — the only user-facing client, targeting iOS, Android, and
 web from one codebase.
 
-Created with `create-expo-app` (default template, then reset to a blank screen).
+Created with `create-expo-app`, using Expo Router for navigation.
 
 ## Running it
 
@@ -26,7 +26,15 @@ open it in your web browser instead. Save a file and the app reloads by itself.
 ## What's in here
 
 - `src/app/` — the screens. Every file here is a screen (this is "file-based routing").
-  `index.tsx` is the home screen; `_layout.tsx` wraps all screens.
+  - `(tabs)/` — the three tabs: `index.tsx` (Portfolio, the home screen), `scan.tsx`,
+    and `search.tsx`.
+  - `card/[id].tsx` — card detail; `[id]` means the card id comes from the URL.
+  - `portfolio/` — `entry.tsx` (add/edit a purchase) and `holding.tsx` (one holding).
+  - `_layout.tsx` — wraps all screens (fonts, navigation stack).
+- `src/components/` — reusable UI pieces (buttons, chips, holding rows, price change).
+- `src/portfolio/` — `usePortfolio()` and the one `PortfolioStore` instance the app uses.
+- `src/scanner/` — camera capture with the card-outline guide (photo upload on web).
+- `src/theme/` — every color, font, and spacing value. Screens never hard-code these.
 - `assets/` — images such as the app icon and splash screen.
 - `app.json` — app settings: name, icon, colors, and which Expo plugins to use.
 - `package.json` — the list of packages this app depends on, and handy commands.
@@ -40,22 +48,4 @@ Useful commands (run inside `apps/app`):
 - `npx expo install <package>` — add a package (use this instead of `npm install
   <package>` so you get a version that works with this Expo version).
 
-## Planned feature organization
-
-Once initialized, organize app code by feature rather than by file type:
-
-- `app/` (Expo Router routes) — screen entry points for each feature: scanner, portfolio,
-  search, auth, wiring them together via file-based routing.
-- `features/scanner/` — camera capture UI, on-device model invocation (loading the
-  exported model from `ml/export/mobile`), card-match result screen, add-to-portfolio
-  flow. On web, this will also house the upload-a-photo fallback.
-- `features/portfolio/` — owned-cards list, total value / gains-losses summary, value
-  history chart, individual card detail with purchase price entry.
-- `features/search/` — search-by-name/set UI, results list with price + card info
-  (set, number, rarity, artist, image).
-- `features/auth/` — sign in / sign up / session handling against Supabase auth.
-- `lib/` — app-local glue code (Supabase client instance, navigation helpers, etc.) that
-  isn't shared outside this app.
-
-Cross-app-boundary code (types, API client, utilities) belongs in `packages/shared`
-instead of here.
+Card data, portfolio storage, and shared types live in `packages/shared`, not here.
