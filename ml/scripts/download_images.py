@@ -3,15 +3,18 @@
     python scripts/download_images.py            # everything (~22k images)
     python scripts/download_images.py --limit 50 # just the first 50, for a quick test
 
-Saves the card list to data/cards.json and each image to data/images/<card id>.webp.
+Saves the card list to data/cards.json and each image to data/images/<card id>.webp
+(using the .png version, converted, when TCGdex has no .webp).
 Safe to stop (Ctrl+C) and re-run: images already on disk are skipped.
 """
 
 import argparse
 import json
 import time
+from io import BytesIO
 
 import requests
+from PIL import Image
 from tqdm import tqdm
 
 from common import CARDS_FILE, IMAGES_DIR, TCGDEX_CARDS_URL, image_path_for
@@ -31,13 +34,22 @@ def fetch_card_list(session):
     return cards
 
 
-def download(session, url, path):
-    response = session.get(url, timeout=TIMEOUT_SECONDS)
+def download(session, image_url, path):
+    response = session.get(image_url + "/low.webp", timeout=TIMEOUT_SECONDS)
+    # A few hundred cards have no .webp on TCGdex but do have a .png of the
+    # same picture — fetch that and convert it so every image is a .webp.
+    use_png = response.status_code == 404
+    if use_png:
+        response = session.get(image_url + "/low.png", timeout=TIMEOUT_SECONDS)
     response.raise_for_status()
     # Write to a temporary name first, so a half-finished download (e.g. if
     # you press Ctrl+C) is never mistaken for a complete image on the next run.
     partial = path.with_suffix(".part")
-    partial.write_bytes(response.content)
+    if use_png:
+        with Image.open(BytesIO(response.content)) as image:
+            image.save(partial, format="WEBP")
+    else:
+        partial.write_bytes(response.content)
     partial.replace(path)
 
 
@@ -63,9 +75,9 @@ def main():
             already_had += 1
             continue
         try:
-            download(session, card["image"] + "/low.webp", path)
+            download(session, card["image"], path)
             downloaded += 1
-        except requests.RequestException as error:
+        except (requests.RequestException, OSError) as error:  # OSError: bad image data
             failed += 1
             tqdm.write(f"  failed {card['id']}: {error}")
         time.sleep(PAUSE_SECONDS)
