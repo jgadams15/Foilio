@@ -7,7 +7,9 @@ tqdm>=4.66
 
 # Images and math
 pillow>=11.0
+pillow-heif>=1.0              # opens iPhone .heic photos
 numpy>=2.0
+opencv-python-headless>=4.10  # finds and straightens the card in a photo (CPU-only, no GUI parts)
 
 # The pretrained image model (DINOv2), run on CPU
 torch>=2.9

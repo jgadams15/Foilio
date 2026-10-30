@@ -4,6 +4,7 @@ Every script imports from here so they all agree on where files live and how
 images are turned into embeddings.
 """
 
+import json
 from pathlib import Path
 from urllib.parse import quote
 
@@ -11,6 +12,7 @@ ML_DIR = Path(__file__).resolve().parent.parent
 DATA_DIR = ML_DIR / "data"
 IMAGES_DIR = DATA_DIR / "images"
 CARDS_FILE = DATA_DIR / "cards.json"  # card list from TCGdex (id, name, image URL)
+SETS_FILE = DATA_DIR / "sets.json"  # set list from TCGdex (id, name, card count)
 INDEX_DIR = DATA_DIR / "index"
 EMBEDDINGS_FILE = INDEX_DIR / "embeddings.npy"  # one row of numbers per card
 CARD_IDS_FILE = INDEX_DIR / "card_ids.json"  # row N above belongs to card_ids[N]
@@ -18,6 +20,7 @@ INDEX_INFO_FILE = INDEX_DIR / "info.json"  # which model/settings built the inde
 MODEL_CACHE_DIR = ML_DIR / "models"  # downloaded model weights (gitignored)
 
 TCGDEX_CARDS_URL = "https://api.tcgdex.net/v2/en/cards"
+TCGDEX_SETS_URL = "https://api.tcgdex.net/v2/en/sets"
 
 # DINOv2 "small": ~22M parameters, fast enough on a normal laptop CPU.
 MODEL_NAME = "facebook/dinov2-small"
@@ -76,3 +79,41 @@ def embed(model, images):
     vectors = model(pixel_values=batch).pooler_output
     vectors = torch.nn.functional.normalize(vectors, dim=1)
     return vectors.numpy()
+
+
+def open_photo(path):
+    """Open a phone photo (.jpg, .png, or iPhone .heic) as an upright RGB image.
+
+    Phones often save photos sideways and store a note (EXIF orientation) saying
+    which way to turn them. exif_transpose applies that turn so the card is upright.
+    """
+    from PIL import Image, ImageOps
+    from pillow_heif import register_heif_opener
+
+    register_heif_opener()  # teaches Pillow to read .heic files
+    with Image.open(path) as image:
+        return ImageOps.exif_transpose(image).convert("RGB")
+
+
+def load_index():
+    """Load the embedding index: (embeddings, card ids, {card id: card info})."""
+    import numpy as np
+
+    if not EMBEDDINGS_FILE.exists():
+        raise SystemExit("No index found — run scripts/build_index.py first.")
+    embeddings = np.load(EMBEDDINGS_FILE)
+    card_ids = json.loads(CARD_IDS_FILE.read_text(encoding="utf-8"))
+    cards = {card["id"]: card for card in json.loads(CARDS_FILE.read_text(encoding="utf-8"))}
+    return embeddings, card_ids, cards
+
+
+def top_matches(embeddings, card_ids, query, k):
+    """Nearest-neighbor search: the k cards most like `query`, as [(card id, score)].
+
+    All rows have length 1, so a dot product is the cosine similarity.
+    """
+    import numpy as np
+
+    scores = embeddings @ query
+    best = np.argsort(-scores)[:k]
+    return [(card_ids[row], float(scores[row])) for row in best]

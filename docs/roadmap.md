@@ -19,6 +19,7 @@ behind each piece. Everything here uses free services only — see
 - ✅ Scanner phase 2: card recognition prototype in Python — pretrained DINOv2
   embeddings + nearest-neighbor search over every card image (see
   [scanner](decisions/scanner.md) and `ml/README.md`)
-- ⬜ Planned — scanner phase 3: automatic card cropping and accuracy testing on real
-  phone photos
+- ✅ Scanner phase 3: automatic card cropping (OpenCV) and an accuracy test on your own
+  phone photos, with and without cropping (see [scanner](decisions/scanner.md) and
+  `ml/README.md`)
 - ⬜ Planned — scanner phase 4: run recognition on the phone and connect it to the Scan tab
