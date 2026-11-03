@@ -30,9 +30,49 @@ version is ~90 MB and embeds about 9 cards a second on a laptop CPU.
   (cosine similarity, 1.0 = identical). Comparing a photo against all ~22k cards
   this way takes milliseconds, so we don't need a special search library yet.
 
+## Cropping the card out of the photo
+
+**Decided:** Before matching, the card is found in the photo and straightened with
+classic image processing (**OpenCV**, free and CPU-only), not with another ML model.
+The index was built from clean, straight-on card images. A phone photo has a table
+around the card and is taken at an angle, and both make the fingerprint less alike.
+
+How `ml/scripts/crop.py` does it:
+1. **Upright first.** Phones often save photos sideways plus a note (EXIF orientation)
+   saying how to turn them. We apply that before anything else.
+2. **Find edges** on a shrunken copy of the photo. We do it in each color channel
+   separately, so a card counts even when it differs from the table only in color.
+3. **Trace outlines** and, from biggest to smallest, keep the first one that simplifies
+   to **4 corners**, fills at least 10% of the photo, has roughly a card's proportions
+   (63 × 88), and isn't just the photo's own frame. It tries strict settings first, then
+   looser ones for faint edges (light backgrounds, sleeves).
+4. **Perspective warp:** stretch those 4 corners into a flat, upright 630 × 880 card,
+   like scanning it straight on.
+5. **Fallback:** if nothing card-shaped is found, use the whole photo. A match on the
+   whole photo is worse but still often right, so it beats failing.
+
+**Why not an ML model for cropping:** a detector would need training data and more
+compute, and OpenCV-style edge finding is fast, free, and also available on phones.
+We'll revisit only if the accuracy test shows cropping is the bottleneck.
+
+**Measuring it:** `ml/scripts/evaluate.py` runs your own labeled photos through the
+matcher with and without cropping and reports **top-1** (right card ranked #1) and
+**top-5** (right card in the top 5) accuracy, plus a visual HTML report. Labels use
+what's printed on the card (name + `025/165`). The script turns that into TCGdex ids by
+matching name and number and using the set size after the `/`. If several cards still
+fit, any of them counts as correct. If none fit, the photo is skipped with a reason,
+never guessed.
+
 **Known limits / next steps:**
-- Photos with a lot of background or glare match worse than a clean crop. The scanner's
-  card-outline guide (phase 1) helps, and automatic card cropping is a likely next step.
+- Very busy backgrounds (patterned cloth, a pile of other cards) can produce a wrong
+  crop, which matches *worse* than no crop. The report shows these side by side.
+  Photograph cards on a plain surface.
+- A card lying sideways is turned upright in one fixed direction. If it was really
+  the other way round, the crop comes out upside down and matches worse. Taking the
+  photo with the card upright avoids this. Trying both directions is a possible
+  improvement.
+- In a sleeve or toploader, the crop may follow the plastic's edge instead of the
+  card's, which leaves a thin border. It usually still matches.
 - Near-identical printings (e.g. the same art reprinted in another set, or
   normal vs. reverse holo) may come out as close ties. The app should show the top few
   matches for the user to confirm. Finish is asked separately, see

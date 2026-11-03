@@ -1,50 +1,54 @@
 """Find the cards that look most like a photo.
 
     python scripts/match.py path/to/photo.jpg
+    python scripts/match.py photo.heic --save-crop seen.jpg   # see what the model saw
+    python scripts/match.py photo.jpg --no-crop               # use the whole photo
 
+The card is cropped out of the photo automatically first (see crop.py).
 Prints the top 5 matches with a similarity score (1.0 = identical image).
-For best results, crop the photo to just the card.
 """
 
 import argparse
-import json
+import sys
 
-import numpy as np
-from PIL import Image
-
-from common import CARD_IDS_FILE, CARDS_FILE, EMBEDDINGS_FILE, embed, load_model
+from common import embed, load_index, load_model, open_photo, top_matches
+from crop import crop_card
 
 TOP_K = 5
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("photo", help="path to a photo of a card")
+    parser.add_argument("photo", help="path to a photo of a card (.jpg, .png, .heic)")
+    parser.add_argument("--no-crop", action="store_true", help="match the whole photo without cropping")
+    parser.add_argument("--save-crop", metavar="PATH", help="save the image the model sees, e.g. seen.jpg")
     args = parser.parse_args()
+    # Some card names have symbols (like ☆) that Windows can't always print;
+    # show a "?" for those instead of crashing.
+    sys.stdout.reconfigure(errors="replace")
 
-    if not EMBEDDINGS_FILE.exists():
-        raise SystemExit("No index found — run scripts/build_index.py first.")
-    embeddings = np.load(EMBEDDINGS_FILE)
-    card_ids = json.loads(CARD_IDS_FILE.read_text(encoding="utf-8"))
-    names = {card["id"]: card["name"] for card in json.loads(CARDS_FILE.read_text(encoding="utf-8"))}
+    embeddings, card_ids, cards = load_index()
 
     try:
-        with Image.open(args.photo) as image:
-            photo = image.convert("RGB")
+        photo = open_photo(args.photo)
     except OSError as error:
         raise SystemExit(f"Couldn't open {args.photo}: {error}")
 
+    if args.no_crop:
+        print("Cropping off: matching the whole photo.")
+    else:
+        photo, found = crop_card(photo)
+        print("Found the card and cropped it." if found else "No card outline found: matching the whole photo.")
+    if args.save_crop:
+        photo.save(args.save_crop)
+        print(f"Saved what the model saw to {args.save_crop}")
+
     query = embed(load_model(), [photo])[0]
 
-    # Nearest-neighbor search: compare the photo with every card at once.
-    # All rows have length 1, so a dot product is the cosine similarity.
-    scores = embeddings @ query
-    best = np.argsort(-scores)[:TOP_K]
-
     print(f"Top {TOP_K} matches for {args.photo}:")
-    for rank, row in enumerate(best, start=1):
-        card_id = card_ids[row]
-        print(f"  {rank}. {card_id:<16} {names.get(card_id, '?'):<30} {scores[row]:.3f}")
+    for rank, (card_id, score) in enumerate(top_matches(embeddings, card_ids, query, TOP_K), start=1):
+        name = cards.get(card_id, {}).get("name", "?")
+        print(f"  {rank}. {card_id:<16} {name:<30} {score:.3f}")
 
 
 if __name__ == "__main__":

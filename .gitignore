@@ -47,8 +47,12 @@ ml/data/raw/*
 !ml/data/raw/.gitkeep
 ml/data/processed/*
 !ml/data/processed/.gitkeep
-# Personal photos for testing the scanner.
-ml/test_photos/
+# Personal photos and labels for testing the scanner; only the how-to and example are tracked.
+ml/test_photos/*
+!ml/test_photos/README.md
+!ml/test_photos/labels.example.csv
+# Evaluation reports embed those photos, so they stay local too.
+ml/evaluation/reports/
 # Downloaded pretrained model weights (Hugging Face cache) and trained checkpoints.
 ml/models/*
 !ml/models/.gitkeep
